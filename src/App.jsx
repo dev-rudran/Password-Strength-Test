@@ -69,6 +69,41 @@ const STRENGTH_LABELS = {
   strong: 'Strong',
 }
 
+const EyeIcon = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+)
+
+const EyeOffIcon = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+    <line x1="1" y1="1" x2="23" y2="23" />
+  </svg>
+)
+
+const CheckIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="m5 12.5 4.5 4.5L19 7" />
+  </svg>
+)
+
+const CrossIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+    <path d="M6 6l12 12M18 6L6 18" />
+  </svg>
+)
+
+const ShieldIcon = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3Z" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+)
+
 export default function App() {
   const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
@@ -76,22 +111,29 @@ export default function App() {
   const { results, strength } = useMemo(() => analyze(password), [password])
   const suggestions = useMemo(() => buildSuggestions(password, results), [password, results])
   const isStrong = strength === 'strong'
+  const level = strength === null ? 0 : strength === 'strong' ? 3 : strength === 'medium' ? 2 : 1
 
   const handleClear = () => {
     setPassword('')
     setShow(false)
   }
 
-  const level = strength === null ? 0 : strength === 'strong' ? 3 : strength === 'medium' ? 2 : 1
-
   return (
     <main className="container">
-      <h1>Password Strength Checker</h1>
-      <p className="subtitle">Check how secure your password is. It never leaves your browser.</p>
+      <div className="brand">
+        <span className="brand-badge"><ShieldIcon /></span>
+        <h1>Password Strength Checker</h1>
+        <p className="subtitle">Check how secure your password is. It never leaves your browser.</p>
+      </div>
 
       <section className="card" aria-label="Password checker">
         <div className="field">
-          <label htmlFor="password">Password</label>
+          <div className="field-top">
+            <label htmlFor="password">Password</label>
+            <span className={`char-count${password.length > 0 ? ' has-value' : ''}`} aria-live="polite">
+              {password.length === 0 ? '' : `${password.length} ${password.length === 1 ? 'character' : 'characters'}`}
+            </span>
+          </div>
           <div className="input-row">
             <input
               id="password"
@@ -111,16 +153,16 @@ export default function App() {
               aria-label={show ? 'Hide password' : 'Show password'}
               aria-pressed={show}
             >
-              {show ? '🙈' : '👁'}
+              {show ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
         </div>
 
         <div className="meter-section">
           <div className="meter-label">
-            <span>Password Strength</span>
-            <span className={`strength strength-${strength ?? 'neutral'}`} aria-live="polite">
-              {strength === null ? 'Enter a password' : `Password Strength: ${STRENGTH_LABELS[strength]}`}
+            <span className="meter-title">Password Strength</span>
+            <span className={`badge badge-${strength ?? 'neutral'}`} aria-live="polite">
+              {strength === null ? 'Enter a password' : STRENGTH_LABELS[strength]}
             </span>
           </div>
           <div
@@ -131,17 +173,24 @@ export default function App() {
             aria-valuenow={level}
             aria-label="Password strength level"
           >
-            <div
-              className={`meter-fill fill-${level}${strength ? ` fill-${strength}` : ''}`}
-              style={{ width: `${(level / 3) * 100}%` }}
-            />
+            {[1, 2, 3].map((seg) => (
+              <div
+                key={seg}
+                className={`meter-seg${level >= seg ? ` active active-${strength}` : ''}`}
+              />
+            ))}
+          </div>
+          <div className="meter-scale" aria-hidden="true">
+            <span>Weak</span>
+            <span>Medium</span>
+            <span>Strong</span>
           </div>
         </div>
 
         <ul className="checks" aria-label="Password requirements">
-          {results.map(({ id, label, passed }) => (
-            <li key={id} className={passed ? 'pass' : 'fail'}>
-              <span className="icon" aria-hidden="true">{passed ? '✓' : '✕'}</span>
+          {results.map(({ id, label, passed }, i) => (
+            <li key={id} className={`${passed ? 'pass' : 'fail'} enter`} style={{ animationDelay: `${i * 50}ms` }}>
+              <span className="icon" aria-hidden="true">{passed ? <CheckIcon /> : <CrossIcon />}</span>
               {label}
             </li>
           ))}
